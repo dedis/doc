@@ -3,7 +3,9 @@
 This folder holds the RFC draft about collective Edwards-curve digital signature
 algorithm.  For more background information, check out the original paper
 ["Keeping Authorities "Honest or Bust" with Decentralized Witness
-Cosigning"](https://arxiv.org/abs/1503.08768) published in IEEE S&P '16.
+Cosigning"](https://arxiv.org/abs/1503.08768) published in IEEE S&P '16.  The
+initial post with follow-up discussions on the CFRG mailing list can be found
+[here](https://www.ietf.org/mail-archive/web/cfrg/current/msg09205.html).
 
 ## Building
 
@@ -19,5 +21,4 @@ After that, a simple `make` will produce an HTML version of the draft.
 All contributions are welcome. Anybody can open a pull request explaining your
 proposed changes. Note that any important discussions should happen on the [CFRG
 mailing list](https://datatracker.ietf.org/group/cfrg/about/) and only then a
-should a pull request on Github should be proposed. The initial post on the
-mailing list can be found [here](https://www.ietf.org/mail-archive/web/cfrg/current/msg09205.html).
+should a pull request on Github should be proposed. 
