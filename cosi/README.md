@@ -14,7 +14,8 @@ install:
 + xml2rfc: http://xml2rfc.ietf.org/
 + mmark: https://github.com/miekg/mmark
 
-After that, a simple `make` will produce an HTML version of the draft.
+After that, a simple `make` will produce an HTML version of the draft in
+`cosi.html`.
 
 ## Contributions
 
