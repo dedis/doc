@@ -16,6 +16,8 @@ After that, a simple `make` will produce an HTML version of the draft.
 
 ## Contributions
 
-All contributions are welcome. You may first open an issue to talk about
-specific points of the draft or directly open a pull request explaining your
-proposed changes. 
+All contributions are welcome. Anybody can open a pull request explaining your
+proposed changes. Note that any important discussions should happen on the [CFRG
+mailing list](https://datatracker.ietf.org/group/cfrg/about/) and only then a
+should a pull request on Github should be proposed. The initial post on the
+mailing list can be found [here](https://www.ietf.org/mail-archive/web/cfrg/current/msg09205.html).
