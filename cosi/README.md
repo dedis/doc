@@ -5,7 +5,9 @@ algorithm.  For more background information, check out the original paper
 ["Keeping Authorities "Honest or Bust" with Decentralized Witness
 Cosigning"](https://arxiv.org/abs/1503.08768) published in IEEE S&P '16.  The
 initial post with follow-up discussions on the CFRG mailing list can be found
-[here](https://www.ietf.org/mail-archive/web/cfrg/current/msg09205.html).
+[here](https://www.ietf.org/mail-archive/web/cfrg/current/msg09205.html). We also posted
+the draft to the curves@moderncrypto mailing list: you can find the relevant discussions 
+[here](https://moderncrypto.org/mail-archive/curves/2017/000927.html).
 
 ## Building
 
