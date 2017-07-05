@@ -372,7 +372,6 @@ commitment from a child at index j in N, the node sets the j-th of its bit mask
 Z_i to 1. The node also performs an OR operation between all the received
 bitmasks from its children and its own bit mask, and let the result be B'.  
 // XXX Should we reject invalid messages, like too-long-bitmask or so?
-// XXX Bitmasks should be signed and checked?
 If the node is an intermediate node, it sends the aggregated commitment R'
 alongside with the Z' bitmask to its parents. If the node is the root node, it
 executes the challenge step.
@@ -556,6 +555,31 @@ the bitmask B described in the Commitment section XXX.
 
 # Discussions
 
+## Related-Key Attacks
+
+The cost of having verifiers to verify the self signatures of all signers public
+key may be too high in certain circumstances. In that respect, a proper
+mechanism to avoid the related-key attack mentioned in section 8.5 may be
+necessary.  There are ways to increase the signing scheme's robustness to such
+related-key attacks even if parties relying on the collective signatures do not
+check self-signed certificates for all members of a collective signing group.
+See for example ["Schnorr Multisignatures for
+Bitcoin"](https://www.docdroid.net/CNSEbvn/aggregates.pdf.html) by Pieter
+Wuille. There are multiple such potential related-key-attack-hardening designs
+to be considered, with different tradeoffs.
+
+## Knowing the full list of public keys upfront
+
+In the current, simple scheme, the verifier must have a complete list of the
+public keys of the members of a collective signing group, in order to adjust the
+verification to the particular set of members that actually signed according to
+the bitmask. For large collective signing groups, this public key list could get
+large and hence be a storage burden for verifiers. An alternative is to assume
+the verifiers only know the root hash of a Merkle tree of public keys, at the
+cost that actual signatures would need to be variable-size and include Merkle
+inclusion-proofs of the public keys of missing cosigners. See section IV.B of
+the [CoSi](https://arxiv.org/abs/1503.08768) paper for more information.
+
 ## Hashing the Public Keys in the commitment
 
 Either do H(R || A || msg) with A being the collective public key OR
@@ -565,14 +589,50 @@ active participant subset Q.
 
 ## Hashing the bitmask in the commitment
 
-To truely bind one signature to a set of signers, the bitmask can be included in
+To truly bind one signature to a set of signers, the bitmask can be included in
 the challenge computation such like H(R || A || bitmask || msg). The signature
 verification process could detect any modifications of the original signature
 before proceeding the computationally expensive process.
 
+## Failure between the challenge and response phase
+
+There exists collective signing protocol variations that would eliminate a DoS
+vulnerability where malicious signers go offline during the challenge/response
+phase. The only way for the protocol to suceed is to restart without that
+malicious signer. If there are F colluding malicious cosigners in the group,
+then they can go offline one-by-one in this way, forcing up to F successive
+restarts, before the honest members of the cosigning group can successfully
+create a valid collective signature. This is of course a limited and potentially
+tolerable DoS attack, “only” O(N) in the group size.  It is therefor important
+to consider whether the scheme should tolerate cosigners failing between the
+"challenge" and "response" phases without requiring restart from scratch. This
+would be another nice-to-have robustness refinement, at the cost of added
+complexity. One possible solution is to make use of Merkle tree for the
+commitments. The leader form all the individual Schnorr commits into a Merkle
+tree, and make the real commit c be the root of that Merkle tree.  In this way,
+the leader is committing not so much to a particular collective Schnorr commit
+but rather to *all possible* Schnorr commits that can be composed from any
+subset of the individual Schnorr commits within that Merkle tree.  See section
+IV.D of the [CoSi](https://arxiv.org/abs/1503.08768) paper for more information.
+
 ## Exception Mechanism
 
 XXX What to do in case a node goes offline, doesn't sign, or doesn't relay up etc. in the tree approach.
+
+## Pairing based cryptography
+
+Probably as more of a long-term roadmap item, it would be worth considering
+similar collective signing schemes based on other cryptosystems, e.g., BLS
+instead of Schnorr. BLS in particular is attractive because it supports
+collective signing in just one phase rather than two, eliminates the restart
+issue above when cosigners disappear between the challenge and response phases,
+and potentially supports completely organic, asynchronous aggregation of partial
+signatures in gossip fashion, which maybe particularly attractive to
+Bitcoin-type systems in which most communication happens via a peer-to-peer
+gossip network. But since BLS is pairing-based and quite recent, there is a need
+for standardized pairing-based curves before one can realistically standardize
+BLS signing. For further details see section IV.E of the
+[CoSi](https://arxiv.org/abs/1503.08768) paper for more information.
 
 # Acknowledgements
 
