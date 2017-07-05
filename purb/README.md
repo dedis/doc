@@ -19,4 +19,17 @@ asymptotically the best possible for any practical scheme allowing
 variable-length plaintexts - while incurring at most 12% padding overhead on any
 ciphertext and at most 6% overhead on ciphertexts 256 bytes or greater.
 
+## Building
 
+In order to compile the purb.md file into an html or txt file, you first need to
+install:
++ xml2rfc: http://xml2rfc.ietf.org/
++ mmark: https://github.com/miekg/mmark
+
+After that, a simple `make` will produce an HTML version of the draft.
+
+## Contributions
+
+All contributions are welcome. You may first open an issue to talk about
+specific points of the draft or directly open a pull request explaining your
+proposed changes. 
