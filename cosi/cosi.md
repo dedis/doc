@@ -258,11 +258,20 @@ steps below successfully.
 
 # Collective Signing Protocol 
 
-This section introduces the distributed CoSi protocol with n participants. For
-simplicity, we assume there is a designated leader who is
-responsible for collecting the shares and generating the signature. This leader
-could be any of the signers and is not trusted in any way. All participants are
-communicating through a reliable channel with the leader.
+This section introduces the distributed CoSi protocol with n participants. 
+The CoSi protocol has four distinct phases, and each one of these phases uses a
+distinct packet:
++ the Announcement packet for the Announcement phase
++ the Commitment packet for the Commitment phase 
++ the Challenge packet for the Challenge phase 
++ the Response packet for the Response phase 
+
+The packets format are described in details in the section XXX Packet Format XXX.
+
+For simplicity, we assume there is a designated leader who is responsible for
+collecting the shares and generating the signature. This leader could be any of
+the signers and is not trusted in any way. All participants are communicating
+through a reliable channel with the leader.
 
 ## Collective Signature
 
@@ -274,12 +283,12 @@ round trips between the leader and the rest of the participants.
 ### Announcement
 
 Upon the request to generate a signature on a message M, the leader broadcasts
-an announcement message indicating the start of a signing process. This
-announcement message MUST contain the message M to sign.
+an Announcement packet indicating the start of a signing process. This
+Announcement packet MUST contain the message M to sign.
 
 ### Commitment
 
-Upon the receipt of an announcement message, each non-leader participant SHOULD
+Upon the receipt of an Announcement packet, each non-leader participant SHOULD
 validate the message M syntactically and semantically according to an
 application-dependent policy. If any of these checks
 fails, the participant MUST abort the protocol.
@@ -287,42 +296,44 @@ fails, the participant MUST abort the protocol.
 Each participant i then generates a random secret r_i by hashing 32 bytes of
 cryptographically secure random data. Each r_i MUST be re-generated until it is
 different from 0 mod L or 1 mod L. Each participants then constructs the
-commitment R_i as the encoding of [r_i]B, sends R_i to the leader and stores the
-generated r_i for usage in the response phase. If the participant is the leader,
-it executes the challenge step.
+commitment R_i as the encoding of [r_i]B, sends R_i in a Commitment packet to
+the leader and stores the generated r_i for usage in the response phase. If the
+participant is the leader, it executes the challenge step.
 
 ### Challenge
 
-The leader waits to receive the commitments R_i from the other participants for
-a certain time frame as defined by the application. After the timeout, the
-leader constructs the subset P' of participants from whom he has received a
-commitment R_i and computes the sum R = SUM_{i in P'}(R_i). The leader then
-computes SHA512(R || A || M) and interprets the resulting 64-byte digest as an
-integer c mod L.  The leader broadcasts c and R to all participants. 
+The leader waits to receive the Commitment packets containing the R_i from the
+other participants for a certain time frame as defined by the application. After
+the timeout, the leader constructs the subset P' of participants from whom he
+has received a commitment R_i and computes the sum R = SUM_{i in P'}(R_i). The
+leader then computes SHA512(R || A || M) and interprets the resulting 64-byte
+digest as an integer c mod L.  The leader broadcasts c and R as a Challenge
+packet to all participants. 
 
 ### Response
 
-Upon receipt of c and R, each non-leader participant verifies the integrity
-of the challenge by computing c' = H(R || A || M) and checking if c' == c. If
-this check fails, the participant MUST abort the protocol.  
+Upon receipt of a Challenge packet containing the challenge c and the aggregated
+commitment R, each non-leader participant verifies the integrity of the
+challenge. The verification process is as follow: 
++ compute c' = H(R || A || M) 
++ check if c' == c. If this check fails, the participant MUST abort the protocol.  
 
 Each participant then generates his response s_i = (r_i + c * a_i) mod L and, if
-it is a non-leader participant, sends s_i to the leader. If the participant is the
-leader, he executes the signature generation step.
-
+it is a non-leader participant, sends s_i in a Response packet to the leader. If
+the participant is the leader, he executes the signature generation step.
 
 ### Signature Generation
 
-The leader waits to receive the responses s_i from the other participants for a
-certain time frame as defined by the application. After the timeout, the leader
-checks if he received responses from all participants in P' and if not he MUST
-abort the protocol. The leader then computes the aggregate response s = SUM{i in
-P'}(s_i) mod L and initializes a bitmask Z of size n to all zero. For each
-participant i who is present in P but not in P' the leader sets the i-th bit of Z
-to 1, i.e., Z[i] = 1. The leader then forms the signature sig as the
-concatenation of the byte-encoded point R, the byte-encoded scalar s, and the
-bitmask Z. The resulting signature is of the form sig = R || s || Z and MUST be
-of length 32 + 32 + ceil(n/8) bytes.
+The leader waits to receive the Response packets containing the individual s_i
+from the other participants for a certain time frame as defined by the
+application. After the timeout, the leader checks if he received responses from
+all participants in P' and if not he MUST abort the protocol. The leader then
+computes the aggregate response s = SUM{i in P'}(s_i) mod L and initializes a
+bitmask Z of size n to all zero. For each participant i who is present in P but
+not in P' the leader sets the i-th bit of Z to 1, i.e., Z[i] = 1. The leader
+then forms the signature sig as the concatenation of the byte-encoded point R,
+the byte-encoded scalar s, and the bitmask Z. The resulting signature is of the
+form sig = R || s || Z and MUST be of length 32 + 32 + ceil(n/8) bytes.
 
 ## Collective Verification
 
@@ -346,9 +357,9 @@ A leaf node is a node who has only one parent and no child nodes.
 
 We define the BROADCAST operation as:
 
- + The leader multicasts a message to his direct child nodes.
+ + The leader multicasts a packet to his direct child nodes.
 
- + Upon receipt of a message, each node stores the message and multicasts it
+ + Upon receipt of a packet, each node stores the packet and multicasts it
    further down to its children node, except if the node is a leaf.
 
 The internal representation of the tree, and its propagation to the nodes
@@ -363,12 +374,12 @@ point A is defined as the collective key of the set P.
 
 ### Announcement
 
-The leader BROADCASTS an announcement message including the message M to sign.
-Upon receipt of an announcement message, each leaf node executes the commitment step.
+The leader BROADCASTS an Announcement packet including the message M to sign.
+Upon receipt of an announcement packet, each leaf node executes the commitment step.
 
 ### Commitment
 
-Upon the receipt of an announcement message, each non-root node SHOULD validate
+Upon the receipt of an Announcement packet, each non-root node SHOULD validate
 the message M syntactically and semantically according to an
 application-dependent policy. If any of these checks fails,
 the node MUST abort the protocol.
@@ -386,36 +397,39 @@ bitmasks from its children and its own bit mask, and let the result be Z'.
 // XXX Should we reject invalid messages, like too-long-bitmask or so?
 // XXX Bitmasks should be signed and checked?
 If the node is an intermediate node, it sends the aggregated commitment R'
-alongside with the Z' bitmask to its parents. If the node is the root node, it
-executes the challenge step.
+alongside with the Z' bitmask to its parents in a Commitment packet. If the node
+is the root node, it executes the challenge step.
 
 // XXX What happens when a node does not receive any commitment from a child
 node. Does it contact the sub-nodes? 
 
 ### Challenge
 
-The leader computes the challenge c = H(R' || A || M) and BROADCASTS c and R'
-down the tree. The leader also saves the bitmask Z' computed in the previous
-step. Upon receipt, each leaf node executes the response step. 
+The leader computes the challenge c = H(R' || A || M) and BROADCASTS c and R' in
+a Challenge packet down the tree. The leader also saves the bitmask Z' computed
+in the previous step. Upon receipt, each leaf node executes the response step. 
 
 ### Response
 
-Upon receipt of c and R', each non-leader node verifies the integrity
-of the challenge by computing c' = H(R' || A || M) and checking if c' == c. If
-this check fails, the node MUST abort the protocol.  
+Upon receipt of the Challenge packet including c and R', each non-root
+node verifies the integrity of the challenge. The verification process is
+as follow: 
++ compute c' = H(R || A || M) 
++ check if c' == c. If this check fails, the node MUST abort the protocol.  
 
-Each node then generates its response s_i as defined in XXX Response XXX. Each leaf
-node sends its response to their parent and is allowed to leave the protocol.  
-Each non-leaf node waits for the responses of its children.
+Each node then generates its response s_i as defined in XXX Response XXX. Each
+leaf node sends a Response packet including its s_i to their parent and is
+allowed to leave the protocol.  Each non-leaf node waits for the responses of
+its children.
 
 XXX HOW to signal / abort? Is it application dependent also? What happens if the root times out?
 
-For each response s received in node i from node's children j, the node i SHOULD
-perform a verification of the partial response. Let t be the sub-tree with the
-node j at the root, and D  the aggregation of all the public keys of the
-nodes in t. Let V be the aggregation of all commitments generated by all
-nodes in t. If the equation [8][s]B = [8]V + [8][c]D does not hold, then
-the node i MUST abort the protocol.
+For each Response packet containing an partial s_i received at node i from
+node's children j, the node i SHOULD perform a verification of the partial
+response. Let t be the sub-tree with the node j at the root, and D  the
+aggregation of all the public keys of the nodes in t. Let V be the aggregation
+of all commitments generated by all nodes in t. If the equation [8][s]B = [8]V +
+[8][c]D does not hold, then the node i MUST abort the protocol.
 
 After the timeout occurs, if at least one child's response is missing, the node
 MUST signal the leader to abort the protocol. Otherwise, each intermediate node
@@ -434,13 +448,12 @@ The generation procedure is exactly the same as in the XXX Generation XXX sectio
 
 The verification procedure is exactly the same as in the XXX Verify XXX section above.
 
-# Message Format
+# Packet Format
 
 All packets exchanged during a CoSi protocol's instance MUST be encoded using Google's
 Protobuf technology [PROTOBUF]. 
-All packets for a CoSi protocol must be encoded inside the CoSiPacket message
-format. The `phase` field indicates which message is encoded in the packet.
-The CoSi packet message contains a `phase` field which is set accordingly
+All packets for a CoSi protocol must be encoded inside the CoSi packet
+format. The CoSi packet contains a `phase` field which is set accordingly
 to the current phase of the protocol:
  + Announcement = 1
  + Commitment = 2
@@ -449,7 +462,7 @@ to the current phase of the protocol:
 
 
 ```Protobuf
-message CoSiPacket {
+message CoSi {
   // Announcement = 1, Commitment = 2, Challenge = 3, Response = 4
   required uint32 phase = 1;
   optional Announcement ann = 2;
@@ -461,19 +474,18 @@ message CoSiPacket {
 
 ## Announcement
 
-The Announcement message notifies nodes of the beginning of a CoSi
-round. Implementations can extent the message specifications to include the
-message to sign. That way, nodes can refuse to vote at this step by not
-replying with a commitment. This do not cause any restart of the protocol later.
+The Announcement packet notifies nodes of the beginning of a CoSi
+round and include the message M to sign for this round.
 
 ```Protobuf
 message Announcement {
+  required bytes message = 1;
 }
 ```
 
 ## Commitment
 
-The commitment message includes the aggregated commitment as well as the bitmask
+The Commitment packet includes the aggregated commitment as well as the bitmask
 if the tree based CoSi protocol is used.
 
 ```Protobuf
@@ -487,7 +499,7 @@ message Commitment {
 
 ## Challenge
 
-The challenge message includes the challenge computed by the leader of the CoSi
+The Challenge packet includes the challenge computed by the leader of the CoSi
 protocol.
 
 ```Protobuf
@@ -499,7 +511,7 @@ message Challenge {
 
 ## Response
 
-The response message includes the aggregated response to be sent to the leader.
+The Response packet includes the aggregated response to be sent to the leader.
 ```Protobuf
 message Response {
   // aggregated response s'
