@@ -198,11 +198,12 @@ The signature is generated as follow:
  1. For each participant i in P', generate a random secret r_i by hashing 32 bytes of 
     cryptographically secure random data. For efficiency, reduce each r_i mod L. 
     Each r_i MUST be re-generated until it is different from 0 mod L or 1 mod L.
-
- 2. Compute the integer addition r of all r_i: r = SUM_{i in P'}(r_i).
  
- 3. Compute the encoding of the fixed-base scalar multiplication [r]B and call the result R.  
+ 2. Each participant computes its random commitment R_i = [r_i]B using 
+    fixed-base scalar multiplication
 
+ 2. Compute the point-wise addition R of all R_i: R = SUM_{i in P'}(R_i).
+ 
  4. Compute SHA512(R || A || M) and interpret the 64-byte digest as an integer c mod L.
 
  5. For each participant i in P', compute the response s_i = (r_i + c * a_i) mod L.
