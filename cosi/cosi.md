@@ -199,8 +199,7 @@ The signature is generated as follow:
     cryptographically secure random data. For efficiency, reduce each r_i mod L. 
     Each r_i MUST be re-generated until it is different from 0 mod L or 1 mod L.
  
- 2. Each participant computes its random commitment R_i = [r_i]B using 
-    fixed-base scalar multiplication
+ 2. For each participant i in P', compute the commitment R_i = [r_i]B.
 
  2. Compute the point-wise addition R of all R_i: R = SUM_{i in P'}(R_i).
  
