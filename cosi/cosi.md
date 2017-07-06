@@ -274,13 +274,16 @@ round trips between the leader and the rest of the participants.
 ### Announcement
 
 Upon the request to generate a signature on a statement S, the leader broadcasts
-an announcement message indicating the start of a signing process. It is up to
-the implementation to decide whether to send S itself during that phase or not. 
+an announcement message indicating the start of a signing process. This
+announcement message MUST contains the statement S to sign.
 
 ### Commitment
 
-Upon the receipt of an announcement message or if the participant is the leader,
-each participant i generates a random secret r_i by hashing 32 bytes of
+Upon the receipt of an announcement message, each non-leader participants SHOULD
+perform a syntactic and semantic validity of the statement S to sign. If a
+participant's check negative result, this participant MUST abort the protocol.
+
+Each participant i then generates a random secret r_i by hashing 32 bytes of
 cryptographically secure random data. Each r_i MUST be re-generated until it is
 different from 0 mod L or 1 mod L. Each participants then constructs the
 commitment R_i as the encoding of [r_i]B, sends R_i to the leader and stores the
@@ -293,15 +296,17 @@ The leader waits to receive the commitments R_i from the other participants for
 a certain time frame as defined by the application. After the timeout, the
 leader constructs the subset M of participants from whom he has received a
 commitment R_i and computes the sum R = SUM_{i in M}(R_i). The leader then
-computes SHA512(R || A || M) and interprets the resulting 64-byte digest as an
-integer c mod L.  The leader broadcasts c to all participants.
+computes SHA512(R || A || S) and interprets the resulting 64-byte digest as an
+integer c mod L.  The leader broadcasts c and R to all participants. 
 
 ### Response
 
-Upon reception of c or if the participant is the leader, each participant
-generates his response s_i = (r_i + c * a_i) mod L. Each non-leader participant
-sends his s_i to the leader. If the participant is the leader, he executes the
-signature generation step.
+Upon reception of c and R, each non-leader participants verifies the integrity
+of the challenge by computing c' = H(R || A || S) and checking if c' == c. If a
+participant finds an incorrect challenge, it MUST abort the protocol.  
+Each participant then generates his response s_i = (r_i + c * a_i) mod L. Each
+non-leader participant sends his s_i to the leader. If the participant is the
+leader, he executes the signature generation step.
 
 
 ### Signature Generation
@@ -356,12 +361,16 @@ point A is defined as the collective key of the set P.
 
 ### Announcement
 
-The leader BROADCASTS an announcement message. Upon reception, each leaf node
-executes the commitment step.
+The leader BROADCASTS an announcement message embedding the statement S to sign.
+Upon reception, each leaf node executes the commitment step.
 
 ### Commitment
 
-Every node must generate a random commitment R_i as described in the previous
+Every non-root node SHOULD perform a syntactic and semantic validity of the
+statement S to sign. If a participant's check outputs a negative result, this
+participant MUST abort the protocol.
+
+Every node then generates a random commitment R_i as described in the previous
 commitment section [...]. Each leaf node directly sends its commitment R_i to
 its parent node.  Each non-leaf node generates a bit mask Z_i of n bits
 initialized with all 0 bits and starts waiting for a commitment and a bit mask
@@ -382,13 +391,17 @@ node. Does it contact the sub-nodes?
 
 ### Challenge
 
-The leader computes the challenge c = H( R' || A || S) and BROADCASTS it
+The leader computes the challenge c = H( R' || A || S) and BROADCASTS c and R'
 down the tree. The leader also saves the bitmask Z' computed in the previous
 step. Upon reception, each leaf node executes the response step. 
 
 ### Response
 
-Each node generates its response s_i as defined in XXX Response XXX. Each leaf
+Upon reception of c and R', each non-leader participant verifies the integrity
+of the challenge by computing c' = H(R' || A || S) and checking if c' == c. If a
+participant finds an incorrect challenge, it MUST abort the protocol.  
+
+Each node then generates its response s_i as defined in XXX Response XXX. Each leaf
 node sends its response to their parent and is allowed to leave the protocol.  
 Each other node starts waiting for the responses of its children. 
 
