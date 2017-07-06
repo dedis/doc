@@ -84,7 +84,7 @@ signed.
 
 # Introduction
 
-A conventional digital signature on some statement S is produced by the holder
+A conventional digital signature on some message M is produced by the holder
 of a secret key k, and may be verified by anyone against the signer's
 corresponding public key K. An attacker who successfully steals or compromises
 the secret key k gains unrestricted ability to impersonate and "sign for" the
@@ -174,11 +174,11 @@ procedure.
 
 ## Collective Public Key Setup
 
-Let N denote the list of participants. First, each participant i of N generates
-his longterm private-public key pair (a_i, A_i) as in EdDSA, see Section 5.1.5
-of [RFC8032](https://tools.ietf.org/html/rfc8032#page-13). Afterwards, given a
-list of public keys A_1, ..., A_n, the collective public key is specified as A =
-A_1 + ... + A_n.
+Let P denote the list of participants, and let n denote the size of P. First, 
+each participant i of P generates his longterm private-public key pair 
+(a_i, A_i) as in EdDSA, see Section 5.1.5 of [RFC8032](https://tools.ietf.org/html/rfc8032#page-13). 
+Afterwards, given a list of public keys A_1, ..., A_n, the collective public key
+is specified as A = A_1 + ... + A_n.
 
 ## Signature Generation
 
@@ -186,31 +186,31 @@ This section presents the collective signature generation scheme.
 
 The inputs of the signature process are:
 
-+ A collective public key A generated from the public keys of participants N.
++ A collective public key A generated from the public keys of participants P.
 
-+ A subset of participants M of N who actively participate in the
-  signature creation. The size of M is denoted by m.
++ A subset of participants P' of P who actively participate in the
+  signature creation.
 
-+ A statement (or message) S.
++ A message M.
 
 The signature is generated as follow:
 
- 1. For each participant i in M, generate a random secret r_i by hashing 32 bytes of 
+ 1. For each participant i in P', generate a random secret r_i by hashing 32 bytes of 
     cryptographically secure random data. For efficiency, reduce each r_i mod L. 
     Each r_i MUST be re-generated until it is different from 0 mod L or 1 mod L.
 
- 2. Compute the integer addition r of all r_i: r = SUM_{i in M}(r_i).
+ 2. Compute the integer addition r of all r_i: r = SUM_{i in P'}(r_i).
  
  3. Compute the encoding of the fixed-base scalar multiplication [r]B and call the result R.  
 
- 4. Compute SHA512(R || A || S) and interpret the 64-byte digest as an integer c mod L.
+ 4. Compute SHA512(R || A || M) and interpret the 64-byte digest as an integer c mod L.
 
- 5. For each participant i in M, compute the response s_i = (r_i + c * a_i) mod L.
+ 5. For each participant i in P', compute the response s_i = (r_i + c * a_i) mod L.
 
- 6. Compute the integer addition s of all s_i: s = SUM_{i in M}(s_i).
+ 6. Compute the integer addition s of all s_i: s = SUM_{i in P'}(s_i).
 
  7. Initialize a bitmask Z of length n to all zero. For each participant i who
-    is present in N but not in M set the i-th bit of Z to 1, i.e., Z[i] = 1.
+    is present in P but not in P' set the i-th bit of Z to 1, i.e., Z[i] = 1.
 
  8. The signature is the concatenation of the encoded point R, the integer s,
     and the bitmask Z, denoted as sig = R || s || Z.
@@ -219,11 +219,11 @@ The signature is generated as follow:
 
 The inputs to the signature verification process are:
 
-+ A list of public keys A_i of all participants i in N.
++ A list of public keys A_i of all participants i in P.
 
 + The collective public key A.
 
-+ The statement S.
++ The message M.
 
 + The signature sig = R || s || Z.
 
@@ -238,13 +238,13 @@ steps below successfully.
  1. Split sig into two 32-byte sequences R and s and a bitmask Z. Interpret R
     as a point on the used elliptic curve and check that it fulfills the curve
     equation. Interpret s as an unsigned integer and verify that it is non-zero
-    and smaller than L. Verify that Z has length n. If any of the mentioned
+    and smaller than L. Verify that Z has length n. If any of these
     checks fails, abort the verification process and return false.
 
  2. Check Z against the signature policy. If the policy does not hold,
     abort the verification process and return false.
 
- 3. Compute SHA512(R || A || S) and interpret the 64-byte digest as an integer c.
+ 3. Compute SHA512(R || A || M) and interpret the 64-byte digest as an integer c.
 
  4. Initialize a new elliptic curve point T = I. For each bit i in the bitmask
     that is equal to 1, add the corresponding public key A_i to the point T.
@@ -266,21 +266,21 @@ communicating through a reliable channel with the leader.
 
 ## Collective Signature
 
-The leader must know the statement S to be signed and the set of public keys of
-the participants N. The point A is defined as the collective key of the
-participants N. A collective signature is generated in four steps over two
+The leader must know the message M to be signed and the set of public keys of
+the participants P. The point A is defined as the collective key of the
+participants P. A collective signature is generated in four steps over two
 round trips between the leader and the rest of the participants. 
 
 ### Announcement
 
-Upon the request to generate a signature on a statement S, the leader broadcasts
+Upon the request to generate a signature on a message M, the leader broadcasts
 an announcement message indicating the start of a signing process. This
-announcement message MUST contain the statement S to sign.
+announcement message MUST contain the message M to sign.
 
 ### Commitment
 
 Upon the receipt of an announcement message, each non-leader participant SHOULD
-validate the statement S syntactically and semantically according to an
+validate the message M syntactically and semantically according to an
 application-dependent policy. If any of these checks
 fails, the participant MUST abort the protocol.
 
@@ -295,15 +295,15 @@ it executes the challenge step.
 
 The leader waits to receive the commitments R_i from the other participants for
 a certain time frame as defined by the application. After the timeout, the
-leader constructs the subset M of participants from whom he has received a
-commitment R_i and computes the sum R = SUM_{i in M}(R_i). The leader then
-computes SHA512(R || A || S) and interprets the resulting 64-byte digest as an
+leader constructs the subset P' of participants from whom he has received a
+commitment R_i and computes the sum R = SUM_{i in P'}(R_i). The leader then
+computes SHA512(R || A || M) and interprets the resulting 64-byte digest as an
 integer c mod L.  The leader broadcasts c and R to all participants. 
 
 ### Response
 
 Upon receipt of c and R, each non-leader participant verifies the integrity
-of the challenge by computing c' = H(R || A || S) and checking if c' == c. If
+of the challenge by computing c' = H(R || A || M) and checking if c' == c. If
 this check fails, the participant MUST abort the protocol.  
 
 Each participant then generates his response s_i = (r_i + c * a_i) mod L and, if
@@ -315,10 +315,10 @@ leader, he executes the signature generation step.
 
 The leader waits to receive the responses s_i from the other participants for a
 certain time frame as defined by the application. After the timeout, the leader
-checks if he received responses from all participants in M and if not he MUST
+checks if he received responses from all participants in P' and if not he MUST
 abort the protocol. The leader then computes the aggregate response s = SUM{i in
-M}(s_i) mod L and initializes a bitmask Z of size n to all zero. For each
-participant i who is present in N but not in M the leader sets the i-th bit of Z
+P'}(s_i) mod L and initializes a bitmask Z of size n to all zero. For each
+participant i who is present in P but not in P' the leader sets the i-th bit of Z
 to 1, i.e., Z[i] = 1. The leader then forms the signature sig as the
 concatenation of the byte-encoded point R, the byte-encoded scalar s, and the
 bitmask Z. The resulting signature is of the form sig = R || s || Z and MUST be
@@ -356,33 +356,33 @@ is left to the application.
 
 ## Collective Signature
 
-The leader must know the statement S, the set N of the nodes and their
-public keys, and the subset M of active nodes. The actual communication
-tree T is created from the subset M, and MUST contain all nodes of M. The
+The leader must know the message M, the set P of the nodes and their
+public keys, and the subset P' of active nodes. The actual communication
+tree T is created from the subset P', and MUST contain all nodes of P'. The
 point A is defined as the collective key of the set P. 
 
 ### Announcement
 
-The leader BROADCASTS an announcement message including the statement S to sign.
+The leader BROADCASTS an announcement message including the message M to sign.
 Upon receipt of an announcement message, each leaf node executes the commitment step.
 
 ### Commitment
 
 Upon the receipt of an announcement message, each non-root node SHOULD validate
-the statement S syntactically and semantically according to an
+the message M syntactically and semantically according to an
 application-dependent policy. If any of these checks fails,
 the node MUST abort the protocol.
 
 Every node then generates a random commitment R_i as described in the previous
 commitment section [...]. Each leaf node directly sends its commitment R_i to
-its parent node.  Each non-leaf node generates a bit mask Z_i of n bits
+its parent node. Each non-leaf node generates a bit mask Z_i of n bits
 initialized with all 0 bits and starts waiting for a commitment and a bit mask
 from each of its children. After the timeout defined by the application, each
 node aggregates all its children's commitments R_i received using point addition
 formulas, adds its own commitment and stores the result in R'. For every absent
-commitment from a child at index j in N, the node sets the j-th of its bit mask
+commitment from a child at index j in P, the node sets the j-th of its bit mask
 Z_i to 1. The node also performs an OR operation between all the received
-bitmasks from its children and its own bit mask, and let the result be B'.  
+bitmasks from its children and its own bit mask, and let the result be Z'.  
 // XXX Should we reject invalid messages, like too-long-bitmask or so?
 // XXX Bitmasks should be signed and checked?
 If the node is an intermediate node, it sends the aggregated commitment R'
@@ -394,14 +394,14 @@ node. Does it contact the sub-nodes?
 
 ### Challenge
 
-The leader computes the challenge c = H( R' || A || S) and BROADCASTS c and R'
+The leader computes the challenge c = H(R' || A || M) and BROADCASTS c and R'
 down the tree. The leader also saves the bitmask Z' computed in the previous
 step. Upon receipt, each leaf node executes the response step. 
 
 ### Response
 
 Upon receipt of c and R', each non-leader node verifies the integrity
-of the challenge by computing c' = H(R' || A || S) and checking if c' == c. If
+of the challenge by computing c' = H(R' || A || M) and checking if c' == c. If
 this check fails, the node MUST abort the protocol.  
 
 Each node then generates its response s_i as defined in XXX Response XXX. Each leaf
@@ -480,7 +480,7 @@ if the tree based CoSi protocol is used.
 message Commitment {
   // aggregated commitment R'
   required bytes comm = 1;
-  // bitmask B'
+  // bitmask Z'
   optional bytes mask = 2;
 }
 ```
@@ -574,15 +574,15 @@ the bitmask B described in the Commitment section XXX.
 
 ## Hashing the Public Keys in the commitment
 
-Either do H(R || A || msg) with A being the collective public key OR
-do H(R || SUM(X_i) || msg) where SUM(X_i) is the sum of all public keys that
+Either do H(R || A || M) with A being the collective public key OR
+do H(R || SUM(X_i) || M) where SUM(X_i) is the sum of all public keys that
 participated in the collective signature,i.e. the aggregation of all keys in the
-active participant subset Q.
+active participant subset P'.
 
 ## Hashing the bitmask in the commitment
 
 To truely bind one signature to a set of signers, the bitmask can be included in
-the challenge computation such like H(R || A || bitmask || msg). The signature
+the challenge computation such like H(R || A || bitmask || M). The signature
 verification process could detect any modifications of the original signature
 before proceeding the computationally expensive process.
 
