@@ -280,7 +280,8 @@ announcement message MUST contain the statement S to sign.
 ### Commitment
 
 Upon the receipt of an announcement message, each non-leader participant SHOULD
-validate the statement S syntactically and semantically. If any of these checks
+validate the statement S syntactically and semantically according to an
+application-dependent policy. If any of these checks
 fails, the participant MUST abort the protocol.
 
 Each participant i then generates a random secret r_i by hashing 32 bytes of
@@ -301,7 +302,7 @@ integer c mod L.  The leader broadcasts c and R to all participants.
 
 ### Response
 
-Upon reception of c and R, each non-leader participant verifies the integrity
+Upon receipt of c and R, each non-leader participant verifies the integrity
 of the challenge by computing c' = H(R || A || S) and checking if c' == c. If
 this check fails, the participant MUST abort the protocol.  
 
@@ -347,7 +348,7 @@ We define the BROADCAST operation as:
 
  + The leader multicasts a message to his direct child nodes.
 
- + Upon reception of a message, each node stores the message and multicasts it
+ + Upon receipt of a message, each node stores the message and multicasts it
    further down to its children node, except if the node is a leaf.
 
 The internal representation of the tree, and its propagation to the nodes
@@ -363,12 +364,13 @@ point A is defined as the collective key of the set P.
 ### Announcement
 
 The leader BROADCASTS an announcement message including the statement S to sign.
-Upon reception, each leaf node executes the commitment step.
+Upon receipt of an announcement message, each leaf node executes the commitment step.
 
 ### Commitment
 
 Upon the receipt of an announcement message, each non-root node SHOULD validate
-the statement S syntactically and semantically. If any of these checks fails,
+the statement S syntactically and semantically according to an
+application-dependent policy. If any of these checks fails,
 the node MUST abort the protocol.
 
 Every node then generates a random commitment R_i as described in the previous
@@ -394,11 +396,11 @@ node. Does it contact the sub-nodes?
 
 The leader computes the challenge c = H( R' || A || S) and BROADCASTS c and R'
 down the tree. The leader also saves the bitmask Z' computed in the previous
-step. Upon reception, each leaf node executes the response step. 
+step. Upon receipt, each leaf node executes the response step. 
 
 ### Response
 
-Upon reception of c and R', each non-leader node verifies the integrity
+Upon receipt of c and R', each non-leader node verifies the integrity
 of the challenge by computing c' = H(R' || A || S) and checking if c' == c. If
 this check fails, the node MUST abort the protocol.  
 
