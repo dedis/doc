@@ -270,8 +270,8 @@ The packet formats are described in details in the section XXX Packet Format XXX
 
 For simplicity, we assume there is a designated leader who is responsible for
 collecting the shares and generating the signature. This leader could be any of
-the signers and is not trusted in any way. All participants are communicating
-through a reliable channel with the leader.
+the signers and is not trusted in any way. We assume all participants are
+communicating through a reliable channel with the leader.
 
 ## Collective Signature
 
@@ -284,18 +284,14 @@ round trips between the leader and the rest of the participants.
 
 Upon the request to generate a signature on a message M, the leader broadcasts
 an Announcement packet indicating the start of a signing process. This
-Announcement packet MUST contain the message M to sign.
+Announcement packet MAY contain the message M to sign.
 
 ### Commitment
 
-Upon the receipt of an Announcement packet, each non-leader participant SHOULD
-validate the message M syntactically and semantically according to an
-application-dependent policy. If any of these checks
-fails, the participant MUST abort the protocol.
-
-Each participant i then generates a random secret r_i by hashing 32 bytes of
+Upon the receipt of an Announcement packet,
+participant i generates a random secret r_i by hashing 32 bytes of
 cryptographically secure random data. Each r_i MUST be re-generated until it is
-different from 0 mod L or 1 mod L. Each participants then constructs the
+different from 0 mod L or 1 mod L. Each participant then constructs the
 commitment R_i as the encoding of [r_i]B, sends R_i in a Commitment packet to
 the leader and stores the generated r_i for usage in the response phase. If the
 participant is the leader, it executes the challenge step.
@@ -304,30 +300,36 @@ participant is the leader, it executes the challenge step.
 
 The leader waits to receive the Commitment packets containing the R_i from the
 other participants for a certain time frame as defined by the application. After
-the timeout, the leader constructs the subset P' of participants from whom he
-has received a commitment R_i and computes the sum R = SUM_{i in P'}(R_i). The
-leader then computes SHA512(R || A || M) and interprets the resulting 64-byte
-digest as an integer c mod L.  The leader broadcasts c and R as a Challenge
-packet to all participants. 
+receiving all the expected responses or the timeout, the leader constructs the
+subset P' of participants from whom he
+has received a commitment R_i and computes the sum R = SUM_{i in P'}(R_i).
+The leader broadcasts R as a Challenge
+packet to all participants. Additionally, if the message M was not sent in the
+announcement phase, the leader MUST include M in the Challenge packet.
 
 ### Response
 
-Upon receipt of a Challenge packet containing the challenge c and the aggregated
-commitment R, each non-leader participant verifies the integrity of the
-challenge. The verification process is as follow: 
-+ compute c' = H(R || A || M) 
-+ check if c' == c. If this check fails, the participant MUST abort the protocol.  
+Upon receipt of a Challenge packet, each non-leader participant SHOULD
+validate the message M syntactically and semantically according to an
+application-dependent policy. If any of these checks fails, the participant MUST
+abort the protocol.
 
-Each participant then generates his response s_i = (r_i + c * a_i) mod L and, if
-it is a non-leader participant, sends s_i in a Response packet to the leader. If
-the participant is the leader, he executes the signature generation step.
+Afterwards, each participant computes the challenge c = SHA512(R || A || M) and
+his response s_i = (r_i + c * a_i) mod L. If the participant is not the leader,
+he sends s_i in a Response packet to the leader. If the participant is the
+leader, he executes the signature generation step.
 
 ### Signature Generation
 
 The leader waits to receive the Response packets containing the individual s_i
 from the other participants for a certain time frame as defined by the
 application. After the timeout, the leader checks if he received responses from
-all participants in P' and if not he MUST abort the protocol. The leader then
+all participants in P' and if not he MUST abort the protocol. 
+
+// XXX: shouldn't the leader check also here the validity of the partial
+signatures before combining them?
+
+The leader then
 computes the aggregate response s = SUM{i in P'}(s_i) mod L and initializes a
 bitmask Z of size n to all zero. For each participant i who is present in P but
 not in P' the leader sets the i-th bit of Z to 1, i.e., Z[i] = 1. The leader
@@ -374,15 +376,10 @@ point A is defined as the collective key of the set P.
 
 ### Announcement
 
-The leader BROADCASTS an Announcement packet including the message M to sign.
+The leader BROADCASTS an Announcement packet that MAY include the message M to sign.
 Upon receipt of an announcement packet, each leaf node executes the commitment step.
 
 ### Commitment
-
-Upon the receipt of an Announcement packet, each non-root node SHOULD validate
-the message M syntactically and semantically according to an
-application-dependent policy. If any of these checks fails,
-the node MUST abort the protocol.
 
 Every node then generates a random commitment R_i as described in the previous
 commitment section [...]. Each leaf node directly sends its commitment R_i to
@@ -405,19 +402,20 @@ node. Does it contact the sub-nodes?
 
 ### Challenge
 
-The leader computes the challenge c = H(R' || A || M) and BROADCASTS c and R' in
-a Challenge packet down the tree. The leader also saves the bitmask Z' computed
+The leader BROADCASTS R' in a Challenge packet down the tree. Additionally, if
+the message M was not sent in the announcement phase, the leader MUST include M
+in the Challenge packet.
+ The leader also saves the bitmask Z' computed
 in the previous step. Upon receipt, each leaf node executes the response step. 
 
 ### Response
 
-Upon receipt of the Challenge packet including c and R', each non-root
-node verifies the integrity of the challenge. The verification process is
-as follow: 
-+ compute c' = H(R || A || M) 
-+ check if c' == c. If this check fails, the node MUST abort the protocol.  
+Upon receipt of a Challenge packet, each non-leader participant SHOULD
+validate the message M syntactically and semantically according to an
+application-dependent policy. If any of these checks fails, the participant MUST
+abort the protocol.
 
-Each node then generates its response s_i as defined in XXX Response XXX. Each
+Afterwards, each node i computes its challenge c and response s_i as defined in XXX Response XXX. Each
 leaf node sends a Response packet including its s_i to their parent and is
 allowed to leave the protocol.  Each non-leaf node waits for the responses of
 its children.
