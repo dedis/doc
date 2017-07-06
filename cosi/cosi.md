@@ -249,7 +249,7 @@ steps below successfully.
 
  4. Initialize a new elliptic curve point T = I. For each bit i in the bitmask
     that is equal to 1, add the corresponding public key A_i to the point T.
-    Formally, T = SUM_{i in N, Z[i] == 1}(A_i) for all i set to 1 in the bitmask.
+    Formally, T = SUM_{i in P, Z[i] == 1}(A_i) for all i set to 1 in the bitmask.
 
  5. Compute the reduced public key A' = A - T.
 
