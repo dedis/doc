@@ -123,6 +123,10 @@ thresholds. Generating collective signatures requires cooperation, but can be
 done efficiently at with thousands of participants using a tree-aggregation
 mechanisms as done in the collective signing (CoSi) protocol [COSI].
 
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
+"SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this document are to be
+interpreted as described in [RFC2119].
+
 # Scope
 
 This document does not attempt to describe CoSi in the context of any particular
