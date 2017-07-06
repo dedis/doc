@@ -298,7 +298,7 @@ participant is the leader, it executes the challenge step.
 
 ### Challenge
 
-The leader waits to receive the Commitment packets containing the R_i from the
+The leader waits to receive the Commitment packets containing commitments R_i of the
 other participants for a certain time frame as defined by the application. After
 receiving all the expected responses or the timeout, the leader constructs the
 subset P' of participants from whom he
@@ -315,7 +315,7 @@ application-dependent policy. If any of these checks fails, the participant MUST
 abort the protocol.
 
 Afterwards, each participant computes the challenge c = SHA512(R || A || M) and
-his response s_i = (r_i + c * a_i) mod L. If the participant is not the leader,
+response s_i = (r_i + c * a_i) mod L. If the participant is not the leader,
 he sends s_i in a Response packet to the leader. If the participant is the
 leader, he executes the signature generation step.
 
@@ -323,8 +323,9 @@ leader, he executes the signature generation step.
 
 The leader waits to receive the Response packets containing the individual s_i
 from the other participants for a certain time frame as defined by the
-application. After the timeout, the leader checks if he received responses from
-all participants in P' and if not he MUST abort the protocol. 
+application. After receiving all the expected responses or the timeout, the
+leader checks if he received responses from all participants in P' and if not he
+MUST abort the protocol. 
 
 // XXX: shouldn't the leader check also here the validity of the partial
 signatures before combining them?
