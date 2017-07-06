@@ -267,7 +267,7 @@ distinct packet:
 + the Challenge packet for the Challenge phase 
 + the Response packet for the Response phase 
 
-The packets formats are described in details in the section XXX Packet Format XXX.
+The packet formats are described in details in the section XXX Packet Format XXX.
 
 For simplicity, we assume there is a designated leader who is responsible for
 collecting the shares and generating the signature. This leader could be any of
