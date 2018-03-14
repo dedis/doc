@@ -10,7 +10,7 @@ Some documents may well start here and move elsewhere later.
 
 ## Main repositories
 
-- [Cothority](https://github.com/dedis/cothority/tree/documentation) is the
+- [Cothority](https://github.com/dedis/cothority) is the
 public-facing repository where apps reside that can be used directly by the public.
 - [Kyber cryptographic library](https://github.com/dedis/kyber) is used throughout
 the cothority for all cryptographic functions that need more than a simple `Seal`
