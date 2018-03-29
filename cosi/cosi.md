@@ -274,8 +274,10 @@ round trips between the leader and the rest of the participants.
 ### Announcement
 
 Upon the request to generate a signature on a statement S, the leader broadcasts
-an announcement message indicating the start of a signing process. It is up to
-the implementation to decide whether to send S itself during that phase or not. 
+an announcement message indicating the start of a signing process and the collective
+key A of all participants present in the signing round. It is up to
+the implementation to decide whether to send S itself during the announcement phase
+or later during the challenge phase.
 
 ### Commitment
 
@@ -292,16 +294,16 @@ it executes the challenge step.
 The leader waits to receive the commitments R_i from the other participants for
 a certain time frame as defined by the application. After the timeout, the
 leader constructs the subset M of participants from whom he has received a
-commitment R_i and computes the sum R = SUM_{i in M}(R_i). The leader then
-computes SHA512(R || A || M) and interprets the resulting 64-byte digest as an
-integer c mod L.  The leader broadcasts c to all participants.
+commitment R_i and computes the sum R = SUM_{i in M}(R_i). The leader broadcasts
+R and M to all nodes.
 
 ### Response
 
-Upon reception of c or if the participant is the leader, each participant
-generates his response s_i = (r_i + c * a_i) mod L. Each non-leader participant
-sends his s_i to the leader. If the participant is the leader, he executes the
-signature generation step.
+Upon reception of R and M, ever participant computes SHA512(R || A || M || S) 
+and interprets the resulting 64-byte digest as an integer c mod L.
+Each participant then generates his response s_i = (r_i + c * a_i) mod L.
+Each non-leader participant sends his s_i to the leader. If the participant 
+is the leader, he executes the signature generation step.
 
 
 ### Signature Generation
@@ -382,13 +384,13 @@ node. Does it contact the sub-nodes?
 
 ### Challenge
 
-The leader computes the challenge c = H( R' || A || S) and BROADCASTS it
-down the tree. The leader also saves the bitmask Z' computed in the previous
-step. Upon reception, each leaf node executes the response step. 
+The leader sends R' and Z' to his children. The leader also saves the bitmask Z'
+computed in the previous step. Upon reception, each leaf node executes the response step. 
 
 ### Response
 
-Each node generates its response s_i as defined in XXX Response XXX. Each leaf
+Each node computes the challenge c = H( R' || A || Z' || S ) and generates its 
+response s_i as defined in XXX Response XXX. Each leaf
 node sends its response to their parent and is allowed to leave the protocol.  
 Each other node starts waiting for the responses of its children. 
 
@@ -476,8 +478,10 @@ protocol.
 
 ```Protobuf
 message Challenge {
-  // commputed challenge c
-  required bytes chall = 1;
+  // bitmask of the replies received by the leader
+  required bytes bitmask = 1;
+  // aggregated commitment of all nodes that replied
+  reuired comm = 2;
 }
 ```
 
