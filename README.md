@@ -15,10 +15,10 @@ public-facing repository where apps reside that can be used directly by the publ
 - [Kyber cryptographic library](https://github.com/dedis/kyber) is used throughout
 the cothority for all cryptographic functions that need more than a simple `Seal`
 and `Open`.
-- [Cothority template](https://github.com/dedis/cothority_template/wiki) is useful
+- [Cothority template](https://github.com/dedis/cothority_template) is useful
 to PhD students and others who want to develop their own protocols, services,
 and applications such that they can be integrated into the cothority project.
-- [Cothority network library](https://github.com/dedis/onet/wiki) holds all the
+- [Cothority network library](https://github.com/dedis/onet) holds all the
 basic networking code used by the cothority framework.
 
 ## IETF drafts
